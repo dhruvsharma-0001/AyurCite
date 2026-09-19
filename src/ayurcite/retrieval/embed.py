@@ -1,5 +1,9 @@
-import torch
-from sentence_transformers import SentenceTransformer
+try:
+    import torch
+    from sentence_transformers import SentenceTransformer
+except ImportError:
+    torch = None
+    SentenceTransformer = None
 
 
 class Embedder:
@@ -7,6 +11,8 @@ class Embedder:
 
     def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5"):
         self.model_name = model_name
+        if torch is None or SentenceTransformer is None:
+            raise RuntimeError("sentence-transformers and torch are required for Embedder.")
         self.device = (
             "mps"
             if torch.backends.mps.is_available()

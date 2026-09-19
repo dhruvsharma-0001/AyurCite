@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-19T13:16:21Z",
+  "timestamp": "2026-09-19T13:20:41Z",
   "corpus_version": "v1.0.0",
   "mock_llm": true,
   "metrics": {
@@ -14,10 +14,10 @@
     "second_person_leakage_rate_pct": 0.0
   },
   "performance": {
-    "p50_latency_ms": 2.73,
-    "p95_latency_ms": 4.22,
+    "p50_latency_ms": 2.7,
+    "p95_latency_ms": 4.09,
     "avg_safety_latency_ms": 0.006,
-    "peak_rss_mb": 525.09,
+    "peak_rss_mb": 525.42,
     "inference_cost": "\u20b90.00 (Fully Local)"
   }
 }

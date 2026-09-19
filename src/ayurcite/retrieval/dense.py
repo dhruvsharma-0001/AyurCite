@@ -1,6 +1,10 @@
 from pathlib import Path
 
-import lancedb
+try:
+    import lancedb
+except ImportError:
+    lancedb = None
+
 from pydantic import BaseModel
 
 from src.ayurcite.config import DATA_DIR
@@ -26,12 +30,18 @@ class DenseRetriever:
 
     def __init__(self, db_path: Path | None = None, embedder: Embedder | None = None):
         self.db_path = db_path or (DATA_DIR / "processed" / "lancedb")
-        self.db = lancedb.connect(str(self.db_path))
         self._embedder = embedder
         self.table = None
-        tables = self.db.list_tables() if hasattr(self.db, "list_tables") else self.db.table_names()
-        if self.TABLE_NAME in tables:
-            self.table = self.db.open_table(self.TABLE_NAME)
+        self.db = None
+        if lancedb is not None:
+            self.db = lancedb.connect(str(self.db_path))
+            tables = (
+                self.db.list_tables()
+                if hasattr(self.db, "list_tables")
+                else self.db.table_names()
+            )
+            if self.TABLE_NAME in tables:
+                self.table = self.db.open_table(self.TABLE_NAME)
 
     @property
     def embedder(self) -> Embedder:
