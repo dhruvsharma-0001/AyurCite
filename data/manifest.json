@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-09-19",
+  "sources": [
+    {
+      "doc_id": "cs_kaviratna_1890",
+      "title": "Charaka-Samhita (Avinash Chandra Kaviratna 1890)",
+      "filename": "cs_kaviratna_1890.txt",
+      "url": "https://archive.org/download/BIUSante_47357/BIUSante_47357_djvu.txt",
+      "sha256": "f279e9499b6cc31a39d5498bb2da3e659bdbdac5ef753114ce5ccf76c2c8c673",
+      "bytes": 4989688
+    },
+    {
+      "doc_id": "ss_bhishagratna_1907",
+      "title": "Sushruta Samhita Vol 1 Sutrasthana (Kaviraj Kunja Lal Bhishagratna 1907)",
+      "filename": "ss_bhishagratna_1907.txt",
+      "url": "https://archive.org/download/englishtranslati01susruoft/englishtranslati01susruoft_djvu.txt",
+      "sha256": "73655aa11aa38eb6224415ab90a842f66e96c10785a0cb5c64abc335c9a16f17",
+      "bytes": 1103574
+    }
+  ]
+}

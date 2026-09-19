@@ -1,0 +1,31 @@
+{
+  "B0_BM25_only": {
+    "description": "BM25 lexical retrieval only with NAMC query expansion, no LLM",
+    "num_answerable": 60,
+    "recall_at_5": 0.0833,
+    "recall_at_10": 0.1333,
+    "mrr_at_10": 0.0549,
+    "category_breakdown": {
+      "conceptual": {
+        "recall_at_10": 0.1,
+        "hits_at_10": 2,
+        "total": 20
+      },
+      "locational": {
+        "recall_at_10": 0.2,
+        "hits_at_10": 3,
+        "total": 15
+      },
+      "herb_properties": {
+        "recall_at_10": 0.0667,
+        "hits_at_10": 1,
+        "total": 15
+      },
+      "comparative": {
+        "recall_at_10": 0.2,
+        "hits_at_10": 2,
+        "total": 10
+      }
+    }
+  }
+}

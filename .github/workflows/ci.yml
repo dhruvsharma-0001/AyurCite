@@ -1,0 +1,73 @@
+name: AyurCite CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  quality:
+    name: Code Quality & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Install Dependencies
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+
+      - name: Run Ruff Linter
+        run: |
+          .venv/bin/ruff check .
+
+      - name: Run Test Suite
+        run: |
+          PYTHONPATH=. .venv/bin/pytest tests/ -v
+
+  safety-gate:
+    name: Tier-0 Safety Hard Block Gate (100% Catch Required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          pip install pytest pydantic
+
+      - name: Run Adversarial Safety Suite
+        run: |
+          PYTHONPATH=. pytest tests/test_safety_router.py -v -s
+
+  eval-smoke:
+    name: Evaluation Smoke Gate (0% Hallucinated Citations Required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          pip install pydantic rank-bm25 psutil fastapi
+
+      - name: Run Smoke Evaluation Harness
+        run: |
+          PYTHONPATH=. python evals/run_eval.py --subset 20 --mock-llm

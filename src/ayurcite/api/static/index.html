@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AyurCite v1 — Classical Ayurvedic Literature Reference</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #047857;
+      --primary-hover: #065f46;
+      --border: #e2e8f0;
+      --danger-bg: #fef2f2;
+      --danger-border: #f87171;
+      --danger-text: #991b1b;
+      --warning-bg: #fffbeb;
+      --warning-border: #fcd34d;
+      --warning-text: #92400e;
+      --badge-grounded: #dcfce7;
+      --badge-grounded-text: #166534;
+      --badge-refused: #f1f5f9;
+      --badge-refused-text: #475569;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); line-height: 1.6; padding-bottom: 60px; }
+    .scope-banner {
+      background: #0f172a; color: #f8fafc; padding: 10px 20px; font-size: 0.85rem;
+      text-align: center; border-bottom: 2px solid var(--primary);
+    }
+    .scope-banner strong { color: #34d399; }
+    .container { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
+    header { margin-bottom: 28px; text-align: center; }
+    h1 { font-size: 2.1rem; color: #064e3b; letter-spacing: -0.5px; margin-bottom: 6px; }
+    .subtitle { color: var(--text-muted); font-size: 1rem; }
+    .search-box {
+      background: var(--card-bg); border-radius: 12px; padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border); margin-bottom: 24px;
+    }
+    .input-row { display: flex; gap: 12px; }
+    input[type="text"] {
+      flex: 1; padding: 14px 16px; border-radius: 8px; border: 1.5px solid var(--border);
+      font-size: 1rem; outline: none; transition: border-color 0.2s;
+    }
+    input[type="text"]:focus { border-color: var(--primary); }
+    button {
+      padding: 14px 26px; border-radius: 8px; background: var(--primary); color: white;
+      font-weight: 600; border: none; cursor: pointer; font-size: 1rem; transition: background 0.2s;
+    }
+    button:hover { background: var(--primary-hover); }
+    .sample-queries { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .chip {
+      font-size: 0.8rem; background: #e2e8f0; color: #334155; padding: 5px 11px;
+      border-radius: 20px; cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .chip:hover { background: #cbd5e1; }
+    .chip.adv { background: #fee2e2; color: #991b1b; }
+    .alert-banner {
+      border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: none; font-size: 0.92rem;
+    }
+    .alert-danger { background: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger-text); }
+    .alert-warning { background: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text); }
+    .card {
+      background: var(--card-bg); border-radius: 12px; padding: 24px; margin-bottom: 24px;
+      border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .badge {
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase; padding: 4px 10px;
+      border-radius: 12px; letter-spacing: 0.5px;
+    }
+    .badge.grounded { background: var(--badge-grounded); color: var(--badge-grounded-text); }
+    .badge.refused { background: var(--badge-refused); color: var(--badge-refused-text); }
+    .answer-text { font-size: 1.08rem; line-height: 1.7; color: #1e293b; margin-bottom: 18px; }
+    .cite-tag {
+      background: #e0f2fe; color: #0369a1; font-family: monospace; font-weight: 600;
+      padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; text-decoration: none;
+    }
+    .meta-bar {
+      display: flex; gap: 16px; font-size: 0.8rem; color: var(--text-muted);
+      border-top: 1px solid var(--border); padding-top: 12px; flex-wrap: wrap;
+    }
+    .sources-title { font-size: 1.15rem; color: #064e3b; margin-bottom: 14px; font-weight: 600; }
+    .verse-card {
+      background: #f8fafc; border: 1px solid var(--border); border-radius: 8px;
+      padding: 16px; margin-bottom: 12px; transition: border-color 0.2s;
+    }
+    .verse-card:hover { border-color: #94a3b8; }
+    .verse-meta {
+      display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600;
+      color: #334155; margin-bottom: 8px;
+    }
+    .verse-text { font-size: 0.95rem; color: #334155; font-style: italic; }
+    #loading { display: none; text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <div class="scope-banner">
+    <strong>AyurCite Scope:</strong> Classical Literature Reference Only. Answers what ancient texts state with verified citations. 
+    Strictly <em>no diagnosis, prescribing, personalized dosing, or medical emergencies.</em>
+  </div>
+
+  <div class="container">
+    <header>
+      <h1>AyurCite v1</h1>
+      <p class="subtitle">Fully-Local, Citation-Grounded Classical Ayurvedic Reference Engine</p>
+    </header>
+
+    <div class="search-box">
+      <div class="input-row">
+        <input type="text" id="queryInput" placeholder="Ask a question about classical Ayurvedic literature..." />
+        <button id="searchBtn" onclick="submitQuery()">Search</button>
+      </div>
+      <div class="sample-queries">
+        <button class="chip" onclick="setQuery('What are the three doshas and how are they defined according to Charaka Samhita?')">Three Doshas</button>
+        <button class="chip" onclick="setQuery('What rasa and virya does Haritaki have according to the texts?')">Haritaki Properties</button>
+        <button class="chip" onclick="setQuery('Which chapter of Charaka Samhita Sutrasthana discusses Dinacharya?')">Dinacharya Routine</button>
+        <button class="chip" onclick="setQuery('What are the four pillars of treatment (Chikitsa Chatushpada)?')">Chikitsa Chatushpada</button>
+        <button class="chip adv" onclick="setQuery('Sudden severe chest pain and shortness of breath, what herb can cure it?')">Adversarial Emergency</button>
+        <button class="chip adv" onclick="setQuery('Can I stop taking metformin and use herbal powders instead?')">Adversarial Meds</button>
+      </div>
+    </div>
+
+    <div id="loading">Searching verified classical texts...</div>
+
+    <div id="alertBanner" class="alert-banner"></div>
+
+    <div id="resultCard" class="card" style="display: none;">
+      <div class="card-header">
+        <strong style="color: #064e3b; font-size: 0.95rem;">AyurCite Grounded Answer</strong>
+        <span id="confidenceBadge" class="badge"></span>
+      </div>
+      <div id="answerText" class="answer-text"></div>
+      <div class="meta-bar">
+        <span id="metaCorpus">Corpus: v1.0.0</span>
+        <span id="metaModel">Model: gemma2:2b</span>
+        <span id="metaLatency">Latency: 0ms</span>
+        <span id="metaPii">PII: Clean</span>
+      </div>
+    </div>
+
+    <div id="sourcesSection" style="display: none;">
+      <h2 class="sources-title">Retrieved Classical Verses</h2>
+      <div id="sourcesContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    function setQuery(q) {
+      document.getElementById("queryInput").value = q;
+      submitQuery();
+    }
+
+    async function submitQuery() {
+      const q = document.getElementById("queryInput").value.trim();
+      if (!q) return;
+
+      const loading = document.getElementById("loading");
+      const alertBanner = document.getElementById("alertBanner");
+      const resultCard = document.getElementById("resultCard");
+      const sourcesSection = document.getElementById("sourcesSection");
+      const sourcesContainer = document.getElementById("sourcesContainer");
+
+      loading.style.display = "block";
+      alertBanner.style.display = "none";
+      resultCard.style.display = "none";
+      sourcesSection.style.display = "none";
+      sourcesContainer.innerHTML = "";
+
+      try {
+        const resp = await fetch("/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: q, top_k: 5 })
+        });
+        const data = await resp.json();
+        loading.style.display = "none";
+
+        // Handle Tier-0 / Tier-1 banners
+        if (data.safety_tier === 0) {
+          alertBanner.className = "alert-banner alert-danger";
+          alertBanner.innerHTML = `<strong>TIER 0 SAFETY REFUSAL:</strong> ${data.answer}`;
+          alertBanner.style.display = "block";
+          return;
+        } else if (data.warning_banner) {
+          alertBanner.className = "alert-banner alert-warning";
+          alertBanner.innerHTML = `<strong>SAFETY NOTICE:</strong> ${data.warning_banner}`;
+          alertBanner.style.display = "block";
+        }
+
+        // Display Answer
+        resultCard.style.display = "block";
+        const badge = document.getElementById("confidenceBadge");
+        badge.textContent = data.confidence;
+        badge.className = `badge ${data.confidence}`;
+
+        // Format citations as pill tags
+        let formatted = data.answer.replace(/\[([a-z]{2}_[a-z]{2}_\d+_\d+)\]/g, '<span class="cite-tag">[$1]</span>');
+        document.getElementById("answerText").innerHTML = formatted;
+
+        document.getElementById("metaCorpus").textContent = `Corpus: ${data.corpus_version}`;
+        document.getElementById("metaModel").textContent = `Engine: ${data.model_version}`;
+        document.getElementById("metaLatency").textContent = `Latency: ${data.latency_ms}ms`;
+        document.getElementById("metaPii").textContent = data.scrubbed_pii ? "PII: Redacted" : "PII: Clean";
+
+        // Display Sources
+        if (data.sources && data.sources.length > 0) {
+          sourcesSection.style.display = "block";
+          data.sources.forEach(s => {
+            const card = document.createElement("div");
+            card.className = "verse-card";
+            card.innerHTML = `
+              <div class="verse-meta">
+                <span>[${s.verse_id}] — ${s.book} (${s.sthana} Ch.${s.chapter}, v.${s.verse})</span>
+                <span style="color: var(--primary);">Score: ${s.rrf_score}</span>
+              </div>
+              <div style="font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 4px;">${s.chapter_title}</div>
+              <div class="verse-text">"${s.english}"</div>
+            `;
+            sourcesContainer.appendChild(card);
+          });
+        }
+      } catch (err) {
+        loading.style.display = "none";
+        alert("Error calling AyurCite API: " + err);
+      }
+    }
+
+    document.getElementById("queryInput").addEventListener("keypress", function (e) {
+      if (e.key === "Enter") submitQuery();
+    });
+  </script>
+</body>
+</html>

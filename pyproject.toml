@@ -1,0 +1,39 @@
+[project]
+name = "ayurcite"
+version = "0.1.0"
+description = "A fully-local, citation-grounded question-answering system over public-domain Ayurvedic classical texts"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.0",
+    "pydantic>=2.6.0",
+    "sentence-transformers>=2.5.0",
+    "torch>=2.2.0",
+    "lancedb>=0.6.0",
+    "rank-bm25>=0.2.2",
+    "httpx>=0.27.0",
+    "presidio-analyzer>=2.2.354",
+    "spacy>=3.7.4",
+    "pandas>=2.2.0",
+    "tqdm>=4.66.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.3.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

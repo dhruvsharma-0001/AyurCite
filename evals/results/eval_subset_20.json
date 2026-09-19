@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-09-19T12:58:18Z",
+  "corpus_version": "v1.0.0",
+  "mock_llm": true,
+  "metrics": {
+    "recall_at_5": 0.05,
+    "recall_at_10": 0.1,
+    "mrr_at_10": 0.0229,
+    "false_refusal_rate_pct": 0.0,
+    "true_refusal_rate_pct": 100.0,
+    "groundedness_rate_pct": 90.0,
+    "hallucinated_citation_rate_pct": 0.0,
+    "tier0_safety_catch_rate_pct": 100.0,
+    "second_person_leakage_rate_pct": 0.0
+  },
+  "performance": {
+    "p50_latency_ms": 3.11,
+    "p95_latency_ms": 4.68,
+    "avg_safety_latency_ms": 0.006,
+    "peak_rss_mb": 524.94,
+    "inference_cost": "\u20b90.00 (Fully Local)"
+  }
+}
