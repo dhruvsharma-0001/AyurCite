@@ -1,8 +1,8 @@
 import re
-from typing import Dict, List, Pattern
+from re import Pattern
 
 # Tier-0 Hard Refusal Responses
-REFUSAL_MESSAGES: Dict[str, str] = {
+REFUSAL_MESSAGES: dict[str, str] = {
     "emergency": (
         "CRITICAL SAFETY REFUSAL: The query describes symptoms that may indicate a medical emergency "
         "(e.g., severe pain, breathing distress, stroke symptoms, loss of consciousness, or hemorrhage). "
@@ -40,45 +40,108 @@ REFUSAL_MESSAGES: Dict[str, str] = {
 }
 
 # Compiled regexes for ultra-fast Tier-0 checking (<5ms)
-SAFETY_PATTERNS: Dict[str, List[Pattern]] = {
+SAFETY_PATTERNS: dict[str, list[Pattern]] = {
     "emergency": [
-        re.compile(r"\b(chest\s*pain|heart\s*attack|cardiac\s*arrest|shortness\s*of\s*breath|difficulty\s*breathing|cannot\s*breathe)\b", re.I),
-        re.compile(r"\b(arterial\s*bleed(ing)?|(severe|profuse)\s*bleed(ing)?|hemorrhage|unconscious(ness)?|fainted|passed\s*out|anaphylaxis|stroke|slurred\s*speech|facial\s*droop)\b", re.I),
-        re.compile(r"\b(seizure(s)?|convuls(ing|ion|ions)|coughing\s*up\s*blood|vomiting\s*blood)\b", re.I),
+        re.compile(
+            r"\b(chest\s*pain|heart\s*attack|cardiac\s*arrest|shortness\s*of\s*breath|difficulty\s*breathing|cannot\s*breathe)\b",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"\b(arterial\s*bleed(ing)?|(severe|profuse)\s*bleed(ing)?|hemorrhage|unconscious(ness)?|fainted|passed\s*out|anaphylaxis|stroke|slurred\s*speech|facial\s*droop)\b",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"\b(seizure(s)?|convuls(ing|ion|ions)|coughing\s*up\s*blood|vomiting\s*blood)\b",
+            re.IGNORECASE,
+        ),
     ],
     "self_harm": [
-        re.compile(r"\b(suicid(e|al)|kill\s*myself|end\s*my\s*life|want\s*to\s*die|self[-\s]*harm|overdose\s*(on|to\s*die))\b", re.I),
+        re.compile(
+            r"\b(suicid(e|al)|kill\s*myself|end\s*my\s*life|want\s*to\s*die|self[-\s]*harm|overdose\s*(on|to\s*die))\b",
+            re.IGNORECASE,
+        ),
     ],
     "pregnancy": [
-        re.compile(r"\b(pregnant|pregnancy|first\s*trimester|second\s*trimester|third\s*trimester|lactati(ng|on)|breastfeeding|nursing\s*(mother|mom)?)\b.*\b(dose|dosage|cure|remedy|take|drink|herb|medicine|safe)\b", re.I),
-        re.compile(r"\b(dose|dosage|safe\s*to\s*take|can\s*i\s*take|take|remedy)\b.*\b(during\s*pregnancy|while\s*pregnant|for\s*pregnant|breastfeeding|trimester|lactation|nursing\s*(mother|mom)?)\b", re.I),
-        re.compile(r"\b(abortifacient|induce\s*abortion|induce\s*miscarriage)\b", re.I),
+        re.compile(
+            r"\b(pregnant|pregnancy|first\s*trimester|second\s*trimester|third\s*trimester|lactati(ng|on)|breastfeeding|nursing\s*(mother|mom)?)\b.*\b(dose|dosage|cure|remedy|take|drink|herb|medicine|safe)\b",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"\b(dose|dosage|safe\s*to\s*take|can\s*i\s*take|take|remedy)\b.*\b(during\s*pregnancy|while\s*pregnant|for\s*pregnant|breastfeeding|trimester|lactation|nursing\s*(mother|mom)?)\b",
+            re.IGNORECASE,
+        ),
+        re.compile(r"\b(abortifacient|induce\s*abortion|induce\s*miscarriage)\b", re.IGNORECASE),
     ],
     "pediatric": [
-        re.compile(r"\b(dose|dosage|how\s*much|drops|give|administer)\b.*\b(infant|baby|newborn|toddler|child|kid|1\s*year\s*old|2\s*year\s*old)\b", re.I),
-        re.compile(r"\b(infant|baby|toddler|pediatric|child|kid)\b.*\b(dose|dosage|cure|treatment|drops)\b", re.I),
+        re.compile(
+            r"\b(dose|dosage|how\s*much|drops|give|administer)\b.*\b(infant|baby|newborn|toddler|child|kid|1\s*year\s*old|2\s*year\s*old)\b",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"\b(infant|baby|toddler|pediatric|child|kid)\b.*\b(dose|dosage|cure|treatment|drops)\b",
+            re.IGNORECASE,
+        ),
     ],
     "oncology": [
-        re.compile(r"\b(cure|treat|shrink|reverse)\b.*\b(cancer|tumor|tumour|carcinoma|sarcoma|leukemia|lymphoma|melanoma|oncology|glioblastoma)\b", re.I),
-        re.compile(r"\b(cancer|tumor|tumour|carcinoma|leukemia|glioblastoma)\b.*\b(cure|herbal\s*cure|ayurvedic\s*cure|natural\s*cure|shrink)\b", re.I),
+        re.compile(
+            r"\b(cure|treat|shrink|reverse)\b.*\b(cancer|tumor|tumour|carcinoma|sarcoma|leukemia|lymphoma|melanoma|oncology|glioblastoma)\b",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"\b(cancer|tumor|tumour|carcinoma|leukemia|glioblastoma)\b.*\b(cure|herbal\s*cure|ayurvedic\s*cure|natural\s*cure|shrink)\b",
+            re.IGNORECASE,
+        ),
     ],
     "medication_replacement": [
-        re.compile(r"\b(stop|quit|replace|substitute|wean\s*off|discontinue)\b.*\b(metformin|insulin|statin|atorvastatin|lisinopril|amlodipine|losartan|blood\s*pressure\s*med|bp\s*med|antidepressant|ssri|chemo|thyroxine|levothyroxine|warfarin|blood\s*thinner)\b", re.I),
-        re.compile(r"\b(herbal|ayurvedic)\s*alternative\s*to\s*(replace|stop)\b", re.I),
+        re.compile(
+            r"\b(stop|quit|replace|substitute|wean\s*off|discontinue)\b.*\b(metformin|insulin|statin|atorvastatin|lisinopril|amlodipine|losartan|blood\s*pressure\s*med|bp\s*med|antidepressant|ssri|chemo|thyroxine|levothyroxine|warfarin|blood\s*thinner)\b",
+            re.IGNORECASE,
+        ),
+        re.compile(r"\b(herbal|ayurvedic)\s*alternative\s*to\s*(replace|stop)\b", re.IGNORECASE),
     ],
     "bhasma_rasashastra": [
-        re.compile(r"\b(bhasma|rasashastra|rasa\s*shastra|parada|kajjali|calcined\s*mercury|purif(y|ied)\s*mercury|arsenic\s*bhasma|swarna\s*bhasma|calx|tamra\s*bhasma|naga\s*bhasma|haratala)\b", re.I),
-        re.compile(r"\bhow\s*to\s*(make|prepare|burn|calcine)\b.*\b(bhasma|mercury|lead|arsenic)\b", re.I),
+        re.compile(
+            r"\b(bhasma|rasashastra|rasa\s*shastra|parada|kajjali|calcined\s*mercury|purif(y|ied)\s*mercury|arsenic\s*bhasma|swarna\s*bhasma|calx|tamra\s*bhasma|naga\s*bhasma|haratala)\b",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"\bhow\s*to\s*(make|prepare|burn|calcine)\b.*\b(bhasma|mercury|lead|arsenic)\b",
+            re.IGNORECASE,
+        ),
     ],
 }
 
 # Tier-1: Modern pharmaceutical drug names to flag for potential herb-drug interaction
 COMMON_PHARMA_DRUGS = {
-    "warfarin", "aspirin", "clopidogrel", "heparin", "apixaban", "rivaroxaban",
-    "metformin", "glipizide", "insulin",
-    "lisinopril", "amlodipine", "losartan", "metoprolol", "atorvastatin", "simvastatin",
-    "levothyroxine", "synthroid",
-    "sertraline", "fluoxetine", "escitalopram", "duloxetine", "alprazolam", "clonazepam",
-    "methotrexate", "prednisone", "cyclosporine", "tacrolimus", "phenytoin", "carbamazepine",
-    "lithium", "digoxin"
+    "warfarin",
+    "aspirin",
+    "clopidogrel",
+    "heparin",
+    "apixaban",
+    "rivaroxaban",
+    "metformin",
+    "glipizide",
+    "insulin",
+    "lisinopril",
+    "amlodipine",
+    "losartan",
+    "metoprolol",
+    "atorvastatin",
+    "simvastatin",
+    "levothyroxine",
+    "synthroid",
+    "sertraline",
+    "fluoxetine",
+    "escitalopram",
+    "duloxetine",
+    "alprazolam",
+    "clonazepam",
+    "methotrexate",
+    "prednisone",
+    "cyclosporine",
+    "tacrolimus",
+    "phenytoin",
+    "carbamazepine",
+    "lithium",
+    "digoxin",
 }

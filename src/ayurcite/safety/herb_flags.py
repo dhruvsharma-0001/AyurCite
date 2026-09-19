@@ -1,7 +1,8 @@
 import csv
 from pathlib import Path
-from typing import Dict, List, Optional
+
 from pydantic import BaseModel
+
 
 class HerbFlagRecord(BaseModel):
     herb_canonical: str
@@ -12,10 +13,11 @@ class HerbFlagRecord(BaseModel):
     source_url: str
     date_checked: str
 
+
 class HerbFlagRegistry:
     def __init__(self, csv_path: Path):
         self.csv_path = csv_path
-        self.flags: List[HerbFlagRecord] = []
+        self.flags: list[HerbFlagRecord] = []
         self._load()
 
     def _load(self):
@@ -26,14 +28,15 @@ class HerbFlagRegistry:
             for row in reader:
                 self.flags.append(HerbFlagRecord(**row))
 
-    def find_flags_for_herb(self, herb_name: str) -> List[HerbFlagRecord]:
+    def find_flags_for_herb(self, herb_name: str) -> list[HerbFlagRecord]:
         h_norm = herb_name.strip().lower()
         return [
-            flag for flag in self.flags
+            flag
+            for flag in self.flags
             if h_norm in flag.herb_canonical.lower() or h_norm in flag.botanical_name.lower()
         ]
 
-    def scan_query(self, query: str) -> List[HerbFlagRecord]:
+    def scan_query(self, query: str) -> list[HerbFlagRecord]:
         q_norm = query.lower()
         matched = []
         seen_keys = set()

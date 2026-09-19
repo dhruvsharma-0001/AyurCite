@@ -1,30 +1,28 @@
-import json
 import logging
-from typing import Dict, List, Optional, Set
+
 import httpx
 from pydantic import BaseModel
 
 from src.ayurcite.config import settings
 from src.ayurcite.generate.prompt import build_prompt
-from src.ayurcite.generate.validator import validate_response, ValidationResult
+from src.ayurcite.generate.validator import validate_response
 
 logger = logging.getLogger("ayurcite.generator")
+
 
 class GenerationResult(BaseModel):
     answer: str
     confidence: str  # grounded, partial, refused
-    extracted_citations: List[str] = []
+    extracted_citations: list[str] = []
     is_valid: bool = True
     retries_used: int = 0
-    validation_reason: Optional[str] = None
+    validation_reason: str | None = None
     model_used: str
+
 
 class LLMGenerator:
     def __init__(
-        self,
-        base_url: Optional[str] = None,
-        model_name: Optional[str] = None,
-        use_mock: bool = False
+        self, base_url: str | None = None, model_name: str | None = None, use_mock: bool = False
     ):
         self.base_url = base_url or settings.ollama_base_url
         self.model_name = model_name or settings.model_name
@@ -40,7 +38,7 @@ class LLMGenerator:
                 "temperature": temperature,
                 "top_p": 0.9,
                 "num_predict": 250,
-            }
+            },
         }
         with httpx.Client(timeout=30.0) as client:
             resp = client.post(url, json=payload)
@@ -48,7 +46,7 @@ class LLMGenerator:
             data = resp.json()
             return data.get("response", "").strip()
 
-    def _generate_mock_answer(self, question: str, retrieved_verses: List[Dict]) -> str:
+    def _generate_mock_answer(self, question: str, retrieved_verses: list[dict]) -> str:
         """Deterministic fallback when Ollama is offline or in CI smoke tests."""
         if not retrieved_verses:
             return "The classical verses in the corpus do not contain sufficient information to answer this question."
@@ -60,12 +58,8 @@ class LLMGenerator:
         first_sent = text.split(".")[0] if "." in text else text[:120]
         return f"According to {book}, {first_sent.strip()} [{vid}]."
 
-    def generate(
-        self,
-        question: str,
-        retrieved_verses: List[Dict]
-    ) -> GenerationResult:
-        retrieved_ids: Set[str] = {v["verse_id"] for v in retrieved_verses}
+    def generate(self, question: str, retrieved_verses: list[dict]) -> GenerationResult:
+        retrieved_ids: set[str] = {v["verse_id"] for v in retrieved_verses}
 
         if not retrieved_verses:
             return GenerationResult(
@@ -73,7 +67,7 @@ class LLMGenerator:
                 confidence="refused",
                 extracted_citations=[],
                 is_valid=True,
-                model_used="rule_refusal"
+                model_used="rule_refusal",
             )
 
         prompt = build_prompt(question, retrieved_verses)
@@ -87,7 +81,9 @@ class LLMGenerator:
             try:
                 raw_answer = self._call_ollama(prompt, temperature=0.2)
             except Exception as e:
-                logger.warning(f"Ollama call failed ({e}). Falling back to deterministic cited generator.")
+                logger.warning(
+                    f"Ollama call failed ({e}). Falling back to deterministic cited generator."
+                )
                 raw_answer = self._generate_mock_answer(question, retrieved_verses)
 
         # Validate Attempt 1
@@ -105,7 +101,9 @@ class LLMGenerator:
 
         # If still invalid after retry, refuse plainly rather than outputting ungrounded text
         if not val.is_valid:
-            logger.warning(f"Response validation failed after retry: {val.reason}. Forcing refusal.")
+            logger.warning(
+                f"Response validation failed after retry: {val.reason}. Forcing refusal."
+            )
             return GenerationResult(
                 answer="The classical verses in the corpus do not contain verified grounded information to address this query.",
                 confidence="refused",
@@ -113,7 +111,7 @@ class LLMGenerator:
                 is_valid=False,
                 retries_used=retries,
                 validation_reason=val.reason,
-                model_used=self.model_name
+                model_used=self.model_name,
             )
 
         confidence = "grounded" if len(val.extracted_citations) > 0 else "partial"
@@ -124,5 +122,5 @@ class LLMGenerator:
             extracted_citations=val.extracted_citations,
             is_valid=True,
             retries_used=retries,
-            model_used=self.model_name
+            model_used=self.model_name,
         )

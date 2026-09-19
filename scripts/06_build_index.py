@@ -1,16 +1,16 @@
 import json
 import time
-from pathlib import Path
+
 import lancedb
-import pyarrow as pa
 from tqdm import tqdm
 
-from src.ayurcite.config import settings, DATA_DIR, PROJECT_ROOT
-from src.ayurcite.retrieval.embed import Embedder
+from src.ayurcite.config import DATA_DIR, PROJECT_ROOT
 from src.ayurcite.retrieval.dense import DenseRetriever
+from src.ayurcite.retrieval.embed import Embedder
 
 VERSES_PATH = DATA_DIR / "processed" / "verses.jsonl"
 LANCEDB_DIR = DATA_DIR / "processed" / "lancedb"
+
 
 def build_dense_index():
     print("=======================================================")
@@ -38,7 +38,7 @@ def build_dense_index():
         for r in records
     ]
 
-    print(f"[Index] Computing dense embeddings (batch size 128)...")
+    print("[Index] Computing dense embeddings (batch size 128)...")
     t0 = time.perf_counter()
     batch_size = 128
     all_vectors = []
@@ -55,26 +55,29 @@ def build_dense_index():
     # Format data records
     data_rows = []
     for r, vec in zip(records, all_vectors):
-        data_rows.append({
-            "verse_id": r["verse_id"],
-            "vector": vec,
-            "book": r["book"],
-            "sthana": r["sthana"],
-            "chapter": r["chapter"],
-            "verse": r["verse"],
-            "chapter_title": r.get("chapter_title", ""),
-            "english": r["english"],
-            "prev_verse_id": r.get("prev_verse_id") or "",
-            "next_verse_id": r.get("next_verse_id") or ""
-        })
+        data_rows.append(
+            {
+                "verse_id": r["verse_id"],
+                "vector": vec,
+                "book": r["book"],
+                "sthana": r["sthana"],
+                "chapter": r["chapter"],
+                "verse": r["verse"],
+                "chapter_title": r.get("chapter_title", ""),
+                "english": r["english"],
+                "prev_verse_id": r.get("prev_verse_id") or "",
+                "next_verse_id": r.get("next_verse_id") or "",
+            }
+        )
 
     print(f"[Index] Writing LanceDB table '{DenseRetriever.TABLE_NAME}'...")
-    table = db.create_table(
+    db.create_table(
         DenseRetriever.TABLE_NAME,
         data=data_rows,
-        mode="overwrite"
+        mode="overwrite",
     )
     print(f"✅ Dense vector index built successfully at {LANCEDB_DIR.relative_to(PROJECT_ROOT)}!")
+
 
 if __name__ == "__main__":
     build_dense_index()

@@ -1,9 +1,8 @@
 import hashlib
 import json
-import os
-import sys
-from pathlib import Path
 import urllib.request
+from pathlib import Path
+
 import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -27,12 +26,14 @@ SOURCES = [
     },
 ]
 
+
 def calculate_sha256(filepath: Path) -> str:
     sha256 = hashlib.sha256()
     with open(filepath, "rb") as f:
         while chunk := f.read(65536):
             sha256.update(chunk)
     return sha256.hexdigest()
+
 
 def acquire():
     RAW_DIR.mkdir(parents=True, exist_ok=True)
@@ -45,7 +46,7 @@ def acquire():
         dest_path = RAW_DIR / src["dest_filename"]
         print(f"\n[Acquire] Downloading {src['title']}...")
         print(f"          URL: {src['download_url']}")
-        
+
         req = urllib.request.Request(src["download_url"], headers=headers)
         with urllib.request.urlopen(req) as resp, open(dest_path, "wb") as out:
             data = resp.read()
@@ -56,14 +57,16 @@ def acquire():
         file_size = dest_path.stat().st_size
         checksums[src["doc_id"]] = sha256_hash
 
-        manifest["sources"].append({
-            "doc_id": src["doc_id"],
-            "title": src["title"],
-            "filename": src["dest_filename"],
-            "url": src["download_url"],
-            "sha256": sha256_hash,
-            "bytes": file_size
-        })
+        manifest["sources"].append(
+            {
+                "doc_id": src["doc_id"],
+                "title": src["title"],
+                "filename": src["dest_filename"],
+                "url": src["download_url"],
+                "sha256": sha256_hash,
+                "bytes": file_size,
+            }
+        )
         print(f"          SHA256: {sha256_hash}")
 
     # Write data/manifest.json
@@ -77,7 +80,10 @@ def acquire():
         for doc_id, h in checksums.items():
             df.loc[df["doc_id"] == doc_id, "sha256"] = h
         df.to_csv(LEDGER_PATH, index=False)
-        print(f"[Acquire] License ledger updated with SHA256 hashes -> {LEDGER_PATH.relative_to(PROJECT_ROOT)}")
+        print(
+            f"[Acquire] License ledger updated with SHA256 hashes -> {LEDGER_PATH.relative_to(PROJECT_ROOT)}"
+        )
+
 
 if __name__ == "__main__":
     acquire()

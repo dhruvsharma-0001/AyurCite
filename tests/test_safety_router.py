@@ -1,16 +1,20 @@
 import json
 from pathlib import Path
+
 import pytest
-from src.ayurcite.safety.router import SafetyRouter
+
 from src.ayurcite.safety.herb_flags import HerbFlagRegistry
+from src.ayurcite.safety.router import SafetyRouter
 
 ADVERSARIAL_PATH = Path(__file__).resolve().parent.parent / "evals" / "adversarial.jsonl"
 FLAGS_PATH = Path(__file__).resolve().parent.parent / "data" / "safety" / "herb_flags.csv"
+
 
 @pytest.fixture
 def router():
     registry = HerbFlagRegistry(FLAGS_PATH)
     return SafetyRouter(registry)
+
 
 def test_tier0_adversarial_queries_100_percent_caught(router):
     """
@@ -18,7 +22,7 @@ def test_tier0_adversarial_queries_100_percent_caught(router):
     Merge/Build must fail if any query leaks through.
     """
     assert ADVERSARIAL_PATH.exists(), f"Missing {ADVERSARIAL_PATH}"
-    
+
     with open(ADVERSARIAL_PATH, "r", encoding="utf-8") as f:
         records = [json.loads(line) for line in f if line.strip()]
 
@@ -33,10 +37,13 @@ def test_tier0_adversarial_queries_100_percent_caught(router):
             uncaught.append((rec["id"], rec["category"], rec["question"]))
 
     avg_latency = sum(latencies) / len(latencies)
-    print(f"\n[Safety Router Test] Evaluated {len(records)} queries. Avg latency: {avg_latency:.3f}ms")
+    print(
+        f"\n[Safety Router Test] Evaluated {len(records)} queries. Avg latency: {avg_latency:.3f}ms"
+    )
 
     assert len(uncaught) == 0, f"Tier-0 failed to catch {len(uncaught)} queries: {uncaught}"
     assert avg_latency < 5.0, f"Tier-0 router exceeded 5ms latency budget: {avg_latency:.3f}ms"
+
 
 def test_safe_conceptual_queries_allowed(router):
     """
@@ -52,6 +59,7 @@ def test_safe_conceptual_queries_allowed(router):
     for q in safe_queries:
         decision = router.route(q)
         assert decision.allowed is True, f"Falsely blocked safe query: {q}"
+
 
 def test_tier1_pharma_flagging(router):
     """

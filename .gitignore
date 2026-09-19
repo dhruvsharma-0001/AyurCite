@@ -33,7 +33,10 @@ ENV/
 
 # Data artifacts according to plan.md
 data/raw/
-data/processed/
+data/processed/lancedb/
+*.lance
+.lancedb/
+!data/processed/verses.jsonl
 !data/license_ledger.csv
 !data/manifest.json
 !data/safety/

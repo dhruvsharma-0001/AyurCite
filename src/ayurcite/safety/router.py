@@ -1,23 +1,26 @@
 import re
 import time
-from typing import List, Optional
+
 from pydantic import BaseModel
+
 from src.ayurcite.config import settings
-from src.ayurcite.safety.patterns import SAFETY_PATTERNS, REFUSAL_MESSAGES, COMMON_PHARMA_DRUGS
-from src.ayurcite.safety.herb_flags import HerbFlagRegistry, HerbFlagRecord
+from src.ayurcite.safety.herb_flags import HerbFlagRecord, HerbFlagRegistry
+from src.ayurcite.safety.patterns import COMMON_PHARMA_DRUGS, REFUSAL_MESSAGES, SAFETY_PATTERNS
+
 
 class SafetyDecision(BaseModel):
     allowed: bool
     tier: int
-    category: Optional[str] = None
-    refusal_message: Optional[str] = None
-    warning_banner: Optional[str] = None
-    pharma_flags: List[str] = []
-    herb_flags: List[HerbFlagRecord] = []
+    category: str | None = None
+    refusal_message: str | None = None
+    warning_banner: str | None = None
+    pharma_flags: list[str] = []
+    herb_flags: list[HerbFlagRecord] = []
     latency_ms: float = 0.0
 
+
 class SafetyRouter:
-    def __init__(self, herb_flags_registry: Optional[HerbFlagRegistry] = None):
+    def __init__(self, herb_flags_registry: HerbFlagRegistry | None = None):
         self.herb_flags = herb_flags_registry or HerbFlagRegistry(settings.herb_flags_path)
 
     def route(self, query: str) -> SafetyDecision:
@@ -34,7 +37,7 @@ class SafetyRouter:
                         tier=0,
                         category=category,
                         refusal_message=REFUSAL_MESSAGES[category],
-                        latency_ms=latency_ms
+                        latency_ms=latency_ms,
                     )
 
         # Tier 1: Check modern pharma drugs and herb contraindications
@@ -63,13 +66,9 @@ class SafetyRouter:
                 warning_banner=" | ".join(banner_parts),
                 pharma_flags=detected_pharma,
                 herb_flags=matched_herb_flags,
-                latency_ms=latency_ms
+                latency_ms=latency_ms,
             )
 
         # Tier 2: Normal path
         latency_ms = (time.perf_counter() - t0) * 1000.0
-        return SafetyDecision(
-            allowed=True,
-            tier=2,
-            latency_ms=latency_ms
-        )
+        return SafetyDecision(allowed=True, tier=2, latency_ms=latency_ms)

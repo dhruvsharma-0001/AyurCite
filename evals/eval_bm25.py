@@ -1,11 +1,12 @@
 import json
-from pathlib import Path
-from src.ayurcite.config import settings, DATA_DIR, EVALS_DIR, PROJECT_ROOT
+
+from src.ayurcite.config import EVALS_DIR, PROJECT_ROOT
 from src.ayurcite.retrieval.bm25 import BM25Retriever
 
 GOLD_PATH = EVALS_DIR / "gold_qa.jsonl"
 RESULTS_DIR = EVALS_DIR / "results"
 BASELINES_FILE = RESULTS_DIR / "baselines.json"
+
 
 def evaluate_b0():
     print("=======================================================")
@@ -19,7 +20,9 @@ def evaluate_b0():
     answerable = [q for q in queries if q["answerable"]]
     unanswerable = [q for q in queries if not q["answerable"]]
 
-    print(f"Total Gold Queries: {len(queries)} (Answerable: {len(answerable)}, Unanswerable: {len(unanswerable)})")
+    print(
+        f"Total Gold Queries: {len(queries)} (Answerable: {len(answerable)}, Unanswerable: {len(unanswerable)})"
+    )
 
     hits_at_5 = 0
     hits_at_10 = 0
@@ -27,7 +30,6 @@ def evaluate_b0():
     category_scores = {}
 
     for q in answerable:
-        qid = q["qid"]
         question = q["question"]
         gold_ids = set(q["gold_verse_ids"])
         cat = q["category"]
@@ -61,7 +63,7 @@ def evaluate_b0():
     recall_10 = hits_at_10 / len(answerable)
     mrr_10 = sum(reciprocal_ranks) / len(answerable)
 
-    print(f"\n--- Baseline B0 (BM25 Only) Results ---")
+    print("\n--- Baseline B0 (BM25 Only) Results ---")
     print(f"Recall@5:  {recall_5:.4f} ({hits_at_5}/{len(answerable)})")
     print(f"Recall@10: {recall_10:.4f} ({hits_at_10}/{len(answerable)})")
     print(f"MRR@10:    {mrr_10:.4f}")
@@ -91,16 +93,17 @@ def evaluate_b0():
             cat: {
                 "recall_at_10": round(d["r10"] / d["total"], 4) if d["total"] else 0,
                 "hits_at_10": d["r10"],
-                "total": d["total"]
+                "total": d["total"],
             }
             for cat, d in category_scores.items()
-        }
+        },
     }
 
     with open(BASELINES_FILE, "w", encoding="utf-8") as f:
         json.dump(baselines, f, indent=2)
 
     print(f"\n✅ Results saved to {BASELINES_FILE.relative_to(PROJECT_ROOT)}")
+
 
 if __name__ == "__main__":
     evaluate_b0()

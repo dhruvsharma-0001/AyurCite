@@ -1,5 +1,3 @@
-from typing import List, Dict
-
 SYSTEM_PROMPT = """You are AyurCite, a precision Ayurvedic classical literature reference assistant.
 You answer questions ONLY using the provided classical verses in the CONTEXT below.
 
@@ -15,7 +13,8 @@ CONTEXT:
 {context_str}
 """
 
-def format_context_for_prompt(retrieved_verses: List[Dict]) -> str:
+
+def format_context_for_prompt(retrieved_verses: list[dict]) -> str:
     """Format retrieved verses with context window for LLM prompt."""
     lines = []
     for v in retrieved_verses:
@@ -37,6 +36,9 @@ def format_context_for_prompt(retrieved_verses: List[Dict]) -> str:
 
     return "\n".join(lines).strip()
 
-def build_prompt(question: str, retrieved_verses: List[Dict]) -> str:
+
+def build_prompt(question: str, retrieved_verses: list[dict]) -> str:
     context_str = format_context_for_prompt(retrieved_verses)
-    return SYSTEM_PROMPT.format(context_str=context_str) + f"\n\nUSER QUESTION: {question}\n\nANSWER:"
+    return (
+        SYSTEM_PROMPT.format(context_str=context_str) + f"\n\nUSER QUESTION: {question}\n\nANSWER:"
+    )

@@ -1,9 +1,8 @@
-import json
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+
+from src.ayurcite.ingest.normalise import CANONICAL_TERM_MAP
 from src.ayurcite.ingest.schemas import VerseRecord
-from src.ayurcite.ingest.normalise import CANONICAL_TERM_MAP, strip_accents_iast
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
@@ -12,12 +11,53 @@ PROCESSED_DIR = DATA_DIR / "processed"
 OUTPUT_FILE = PROCESSED_DIR / "verses.jsonl"
 
 ROMAN_NUMERAL_MAP = {
-    "I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10,
-    "XI": 11, "XII": 12, "XIII": 13, "XIV": 14, "XV": 15, "XVI": 16, "XVII": 17, "XVIII": 18,
-    "XIX": 19, "IXX": 19, "XX": 20, "XXI": 21, "XXII": 22, "XXIII": 23, "XXIV": 24, "XXV": 25,
-    "XXVI": 26, "XXVII": 27, "XXVIII": 28, "XXIX": 29, "XXX": 30, "XXXI": 31, "XXXII": 32,
-    "XXXIII": 33, "XXXIV": 34, "XXXV": 35, "XXXVI": 36, "XXXVII": 37, "XXXVIII": 38, "XXXIX": 39,
-    "XL": 40, "XLI": 41, "XLII": 42, "XLIII": 43, "XLIV": 44, "XLV": 45, "XLVI": 46
+    "I": 1,
+    "II": 2,
+    "III": 3,
+    "IV": 4,
+    "V": 5,
+    "VI": 6,
+    "VII": 7,
+    "VIII": 8,
+    "IX": 9,
+    "X": 10,
+    "XI": 11,
+    "XII": 12,
+    "XIII": 13,
+    "XIV": 14,
+    "XV": 15,
+    "XVI": 16,
+    "XVII": 17,
+    "XVIII": 18,
+    "XIX": 19,
+    "IXX": 19,
+    "XX": 20,
+    "XXI": 21,
+    "XXII": 22,
+    "XXIII": 23,
+    "XXIV": 24,
+    "XXV": 25,
+    "XXVI": 26,
+    "XXVII": 27,
+    "XXVIII": 28,
+    "XXIX": 29,
+    "XXX": 30,
+    "XXXI": 31,
+    "XXXII": 32,
+    "XXXIII": 33,
+    "XXXIV": 34,
+    "XXXV": 35,
+    "XXXVI": 36,
+    "XXXVII": 37,
+    "XXXVIII": 38,
+    "XXXIX": 39,
+    "XL": 40,
+    "XLI": 41,
+    "XLII": 42,
+    "XLIII": 43,
+    "XLIV": 44,
+    "XLV": 45,
+    "XLVI": 46,
 }
 
 CHARAKA_SUTRA_TITLES = {
@@ -99,16 +139,20 @@ SUSHRUTA_SUTRA_TITLES = {
     43: "Vamanadravya-vikalpa-vijnaniya Adhyaya",
     44: "Virechanadravya-vikalpa-vijnaniya Adhyaya",
     45: "Dravadravya-vidhi Adhyaya",
-    46: "Annapanavidhi Adhyaya"
+    46: "Annapanavidhi Adhyaya",
 }
+
 
 def clean_ocr_text(text: str) -> str:
     """Remove header artifacts, normalize multiple spaces, remove OCR noise."""
-    text = re.sub(r"Chap\.\s+[IVXLCDM0-9\.\s]+\]\s+SUTRASTHANAM\.?\s*\d*", "", text, flags=re.I)
+    text = re.sub(
+        r"Chap\.\s+[IVXLCDM0-9\.\s]+\]\s+SUTRASTHANAM\.?\s*\d*", "", text, flags=re.IGNORECASE
+    )
     text = re.sub(r"\[\s*\d+\s*\]", "", text)
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"(\w+)-\s*\n\s*(\w+)", r"\1\2", text)
     return text
+
 
 def extract_entities_and_topics(text: str):
     lower = text.lower()
@@ -118,7 +162,16 @@ def extract_entities_and_topics(text: str):
 
     for canonical, variants in CANONICAL_TERM_MAP.items():
         if any(v in lower for v in variants):
-            if canonical in {"vata", "pitta", "kapha", "ojas", "ama", "agni", "dinacharya", "ritucharya"}:
+            if canonical in {
+                "vata",
+                "pitta",
+                "kapha",
+                "ojas",
+                "ama",
+                "agni",
+                "dinacharya",
+                "ritucharya",
+            }:
                 topics.append(canonical)
             else:
                 herbs.append(canonical)
@@ -134,9 +187,13 @@ def extract_entities_and_topics(text: str):
     if any(w in lower for w in ["edema", "shotha", "oedema"]):
         conditions.append("shotha")
 
-    return list(set(topics)), {"herbs": sorted(list(set(herbs))), "conditions": sorted(list(set(conditions)))}
+    return list(set(topics)), {
+        "herbs": sorted(list(set(herbs))),
+        "conditions": sorted(list(set(conditions))),
+    }
 
-def segment_charaka(raw_path: Path) -> List[VerseRecord]:
+
+def segment_charaka(raw_path: Path) -> list[VerseRecord]:
     with open(raw_path, "r", encoding="utf-8", errors="ignore") as f:
         content = f.read()
 
@@ -147,17 +204,17 @@ def segment_charaka(raw_path: Path) -> List[VerseRecord]:
     if viman_idx != -1:
         content = content[:viman_idx]
 
-    lesson_pattern = re.compile(r"\n\s*LESSON\s+([IVXLCDM]+)[\.:\s]*\n", re.I)
+    lesson_pattern = re.compile(r"\n\s*LESSON\s+([IVXLCDM]+)[\.:\s]*\n", re.IGNORECASE)
     splits = lesson_pattern.split(content)
 
-    records: List[VerseRecord] = []
+    records: list[VerseRecord] = []
     sthana = "Sutrasthana"
     sthana_code = "su"
 
-    seen_chaps: Set[int] = set()
+    seen_chaps: set[int] = set()
     for i in range(1, len(splits), 2):
         roman_num = splits[i].strip().upper()
-        lesson_body = splits[i+1]
+        lesson_body = splits[i + 1]
         chap_num = ROMAN_NUMERAL_MAP.get(roman_num, 1)
 
         if chap_num > 30 or chap_num in seen_chaps:
@@ -201,14 +258,15 @@ def segment_charaka(raw_path: Path) -> List[VerseRecord]:
                     edition_year=1890,
                     doc_id="cs_kaviratna_1890",
                     topics=topics,
-                    entities=entities
+                    entities=entities,
                 )
                 records.append(record)
                 verse_idx += 1
 
     return records
 
-def segment_sushruta(raw_path: Path) -> List[VerseRecord]:
+
+def segment_sushruta(raw_path: Path) -> list[VerseRecord]:
     with open(raw_path, "r", encoding="utf-8", errors="ignore") as f:
         content = f.read()
 
@@ -217,17 +275,17 @@ def segment_sushruta(raw_path: Path) -> List[VerseRecord]:
     if sutra_pos != -1:
         content = content[sutra_pos:]
 
-    chapter_pattern = re.compile(r"\n\s*CHAPTER\s+([IVXLCDM]+)[\.:\s]*\n", re.I)
+    chapter_pattern = re.compile(r"\n\s*CHAPTER\s+([IVXLCDM]+)[\.:\s]*\n", re.IGNORECASE)
     splits = chapter_pattern.split(content)
 
-    records: List[VerseRecord] = []
+    records: list[VerseRecord] = []
     sthana = "Sutrasthana"
     sthana_code = "su"
 
-    seen_chaps: Set[int] = set()
+    seen_chaps: set[int] = set()
     for i in range(1, len(splits), 2):
         roman_num = splits[i].strip().upper()
-        body = splits[i+1]
+        body = splits[i + 1]
         chap_num = ROMAN_NUMERAL_MAP.get(roman_num, 1)
 
         if chap_num > 46 or chap_num in seen_chaps:
@@ -271,20 +329,26 @@ def segment_sushruta(raw_path: Path) -> List[VerseRecord]:
                     edition_year=1907,
                     doc_id="ss_bhishagratna_1907",
                     topics=topics,
-                    entities=entities
+                    entities=entities,
                 )
                 records.append(record)
                 verse_idx += 1
 
     return records
 
-def link_neighbor_verses(records: List[VerseRecord]):
+
+def link_neighbor_verses(records: list[VerseRecord]):
     """Link prev_verse_id and next_verse_id within the same chapter."""
     for i, rec in enumerate(records):
-        if i > 0 and records[i-1].chapter == rec.chapter and records[i-1].book == rec.book:
-            rec.prev_verse_id = records[i-1].verse_id
-        if i < len(records) - 1 and records[i+1].chapter == rec.chapter and records[i+1].book == rec.book:
-            rec.next_verse_id = records[i+1].verse_id
+        if i > 0 and records[i - 1].chapter == rec.chapter and records[i - 1].book == rec.book:
+            rec.prev_verse_id = records[i - 1].verse_id
+        if (
+            i < len(records) - 1
+            and records[i + 1].chapter == rec.chapter
+            and records[i + 1].book == rec.book
+        ):
+            rec.next_verse_id = records[i + 1].verse_id
+
 
 def main():
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
@@ -304,10 +368,12 @@ def main():
     link_neighbor_verses(all_records)
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        for rec in all_records:
-            f.write(rec.model_dump_json() + "\n")
+        f.writelines(rec.model_dump_json() + "\n" for rec in all_records)
 
-    print(f"[Segment] Successfully saved {len(all_records)} verses -> {OUTPUT_FILE.relative_to(PROJECT_ROOT)}")
+    print(
+        f"[Segment] Successfully saved {len(all_records)} verses -> {OUTPUT_FILE.relative_to(PROJECT_ROOT)}"
+    )
+
 
 if __name__ == "__main__":
     main()

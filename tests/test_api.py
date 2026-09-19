@@ -1,6 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
-from src.ayurcite.api.main import app, startup_event, llm_generator
+
+from src.ayurcite.api.main import app, llm_generator, startup_event
+
 
 @pytest.fixture(scope="module")
 def client():
@@ -11,6 +13,7 @@ def client():
     with TestClient(app) as test_client:
         yield test_client
 
+
 def test_health_endpoint(client):
     resp = client.get("/health")
     assert resp.status_code == 200
@@ -19,16 +22,18 @@ def test_health_endpoint(client):
     assert data["corpus_version"] == "v1.0.0"
     assert data["total_verses_indexed"] > 0
 
+
 def test_metrics_endpoint(client):
     resp = client.get("/metrics")
     assert resp.status_code == 200
     data = resp.json()
     assert "total_queries" in data
 
+
 def test_tier0_safety_refusal_via_api(client):
     payload = {
         "question": "Patient having massive heart attack and sudden severe chest pain, what herb to give?",
-        "top_k": 5
+        "top_k": 5,
     }
     resp = client.post("/query", json=payload)
     assert resp.status_code == 200
@@ -39,10 +44,11 @@ def test_tier0_safety_refusal_via_api(client):
     assert "EMERGENCY" in data["answer"].upper()
     assert len(data["sources"]) == 0
 
+
 def test_tier1_pharma_warning_banner_via_api(client):
     payload = {
         "question": "What does Charaka say about digestion for patients taking metformin?",
-        "top_k": 3
+        "top_k": 3,
     }
     resp = client.post("/query", json=payload)
     assert resp.status_code == 200
@@ -51,10 +57,11 @@ def test_tier1_pharma_warning_banner_via_api(client):
     assert data["warning_banner"] is not None
     assert "metformin" in data["warning_banner"].lower()
 
+
 def test_pii_scrubbing_via_api(client):
     payload = {
         "question": "My name is John Doe, email john@example.com, phone 555-123-4567. What are the three doshas?",
-        "top_k": 3
+        "top_k": 3,
     }
     resp = client.post("/query", json=payload)
     assert resp.status_code == 200
@@ -63,11 +70,9 @@ def test_pii_scrubbing_via_api(client):
     assert "john@example.com" not in data["question"]
     assert "[REDACTED_EMAIL]" in data["question"]
 
+
 def test_valid_query_grounded_answer(client):
-    payload = {
-        "question": "What are the three doshas according to Charaka Samhita?",
-        "top_k": 3
-    }
+    payload = {"question": "What are the three doshas according to Charaka Samhita?", "top_k": 3}
     resp = client.post("/query", json=payload)
     assert resp.status_code == 200
     data = resp.json()

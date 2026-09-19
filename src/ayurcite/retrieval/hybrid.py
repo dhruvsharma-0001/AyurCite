@@ -1,52 +1,50 @@
-import json
-from pathlib import Path
-from typing import Dict, List, Optional, Set
 from pydantic import BaseModel
 
-from src.ayurcite.config import settings, DATA_DIR
-from src.ayurcite.retrieval.bm25 import BM25Retriever, BM25Hit
-from src.ayurcite.retrieval.dense import DenseRetriever, DenseHit
+from src.ayurcite.config import settings
+from src.ayurcite.retrieval.bm25 import BM25Hit, BM25Retriever
+from src.ayurcite.retrieval.dense import DenseHit, DenseRetriever
+
 
 class FusedHit(BaseModel):
     verse_id: str
     rrf_score: float
-    bm25_rank: Optional[int] = None
-    dense_rank: Optional[int] = None
-    bm25_score: Optional[float] = None
-    dense_score: Optional[float] = None
+    bm25_rank: int | None = None
+    dense_rank: int | None = None
+    bm25_score: float | None = None
+    dense_score: float | None = None
     book: str
     sthana: str
     chapter: int
     verse: int
     chapter_title: str
     english: str
-    prev_verse_id: Optional[str] = None
-    next_verse_id: Optional[str] = None
-    prev_verse_text: Optional[str] = None
-    next_verse_text: Optional[str] = None
+    prev_verse_id: str | None = None
+    next_verse_id: str | None = None
+    prev_verse_text: str | None = None
+    next_verse_text: str | None = None
+
 
 class HybridSearchResult(BaseModel):
     query: str
     is_refusal: bool = False
-    refusal_reason: Optional[str] = None
+    refusal_reason: str | None = None
     max_score: float = 0.0
-    hits: List[FusedHit] = []
+    hits: list[FusedHit] = []
+
 
 def reciprocal_rank_fusion(
-    dense_hits: List[DenseHit],
-    bm25_hits: List[BM25Hit],
-    k_rrf: int = 60
-) -> List[FusedHit]:
+    dense_hits: list[DenseHit], bm25_hits: list[BM25Hit], k_rrf: int = 60
+) -> list[FusedHit]:
     """
     Compute Reciprocal Rank Fusion:
     score(d) = sum_{m in {dense, bm25}} 1 / (k_rrf + rank_m(d))
     """
-    scores: Dict[str, float] = {}
-    verse_map: Dict[str, dict] = {}
-    dense_ranks: Dict[str, int] = {}
-    dense_scores: Dict[str, float] = {}
-    bm25_ranks: Dict[str, int] = {}
-    bm25_scores: Dict[str, float] = {}
+    scores: dict[str, float] = {}
+    verse_map: dict[str, dict] = {}
+    dense_ranks: dict[str, int] = {}
+    dense_scores: dict[str, float] = {}
+    bm25_ranks: dict[str, int] = {}
+    bm25_scores: dict[str, float] = {}
 
     for hit in dense_hits:
         vid = hit.verse_id
@@ -68,38 +66,41 @@ def reciprocal_rank_fusion(
     fused_results = []
     for vid in sorted_vids:
         raw_info = verse_map[vid]
-        fused_results.append(FusedHit(
-            verse_id=vid,
-            rrf_score=scores[vid],
-            bm25_rank=bm25_ranks.get(vid),
-            dense_rank=dense_ranks.get(vid),
-            bm25_score=bm25_scores.get(vid),
-            dense_score=dense_scores.get(vid),
-            book=raw_info["book"],
-            sthana=raw_info["sthana"],
-            chapter=raw_info["chapter"],
-            verse=raw_info["verse"],
-            chapter_title=raw_info.get("chapter_title", ""),
-            english=raw_info["english"],
-            prev_verse_id=raw_info.get("prev_verse_id"),
-            next_verse_id=raw_info.get("next_verse_id"),
-        ))
+        fused_results.append(
+            FusedHit(
+                verse_id=vid,
+                rrf_score=scores[vid],
+                bm25_rank=bm25_ranks.get(vid),
+                dense_rank=dense_ranks.get(vid),
+                bm25_score=bm25_scores.get(vid),
+                dense_score=dense_scores.get(vid),
+                book=raw_info["book"],
+                sthana=raw_info["sthana"],
+                chapter=raw_info["chapter"],
+                verse=raw_info["verse"],
+                chapter_title=raw_info.get("chapter_title", ""),
+                english=raw_info["english"],
+                prev_verse_id=raw_info.get("prev_verse_id"),
+                next_verse_id=raw_info.get("next_verse_id"),
+            )
+        )
 
     return fused_results
+
 
 class HybridRetriever:
     def __init__(
         self,
-        bm25_retriever: Optional[BM25Retriever] = None,
-        dense_retriever: Optional[DenseRetriever] = None,
-        tau: float = 0.012
+        bm25_retriever: BM25Retriever | None = None,
+        dense_retriever: DenseRetriever | None = None,
+        tau: float = 0.012,
     ):
         self.bm25 = bm25_retriever or BM25Retriever()
         self.dense = dense_retriever or DenseRetriever()
         self.tau = tau
-        self.verse_id_to_record: Dict[str, dict] = self.bm25.verse_id_to_record
+        self.verse_id_to_record: dict[str, dict] = self.bm25.verse_id_to_record
 
-    def expand_context(self, hits: List[FusedHit]) -> List[FusedHit]:
+    def expand_context(self, hits: list[FusedHit]) -> list[FusedHit]:
         """Attach text of prev_verse and next_verse for context expansion."""
         for hit in hits:
             if hit.prev_verse_id and hit.prev_verse_id in self.verse_id_to_record:
@@ -124,7 +125,7 @@ class HybridRetriever:
                 is_refusal=True,
                 refusal_reason="not_found_in_corpus",
                 max_score=0.0,
-                hits=[]
+                hits=[],
             )
 
         max_score = fused[0].rrf_score
@@ -136,12 +137,12 @@ class HybridRetriever:
                 is_refusal=True,
                 refusal_reason=f"Grounding score {max_score:.4f} is below refusal threshold tau={self.tau:.4f}",
                 max_score=max_score,
-                hits=self.expand_context(fused[:top_k])
+                hits=self.expand_context(fused[:top_k]),
             )
 
         return HybridSearchResult(
             query=query,
             is_refusal=False,
             max_score=max_score,
-            hits=self.expand_context(fused[:top_k])
+            hits=self.expand_context(fused[:top_k]),
         )

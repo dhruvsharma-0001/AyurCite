@@ -1,31 +1,35 @@
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
-from fastapi import FastAPI, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 
-from src.ayurcite.config import settings, DATA_DIR
-from src.ayurcite.safety.scrub import scrub_pii
-from src.ayurcite.safety.router import SafetyRouter
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+from src.ayurcite.api.schemas import (
+    HealthResponse,
+    MetricsResponse,
+    QueryRequest,
+    QueryResponse,
+    SourceVerse,
+)
+from src.ayurcite.config import settings
+from src.ayurcite.generate.llm import LLMGenerator
 from src.ayurcite.retrieval.bm25 import BM25Retriever
 from src.ayurcite.retrieval.dense import DenseRetriever
 from src.ayurcite.retrieval.hybrid import HybridRetriever
-from src.ayurcite.generate.llm import LLMGenerator
-from src.ayurcite.api.schemas import (
-    QueryRequest, QueryResponse, SourceVerse, HealthResponse, MetricsResponse
-)
+from src.ayurcite.safety.router import SafetyRouter
+from src.ayurcite.safety.scrub import scrub_pii
 
 app = FastAPI(
     title="AyurCite API",
     description="Precision, citation-grounded Q&A over public-domain classical Ayurvedic literature",
-    version=settings.corpus_version
+    version=settings.corpus_version,
 )
 
 # Global instances (initialized on startup)
-safety_router: Optional[SafetyRouter] = None
-hybrid_retriever: Optional[HybridRetriever] = None
-llm_generator: Optional[LLMGenerator] = None
+safety_router: SafetyRouter | None = None
+hybrid_retriever: HybridRetriever | None = None
+llm_generator: LLMGenerator | None = None
 
 # In-memory metrics
 metrics_data = {
@@ -33,11 +37,12 @@ metrics_data = {
     "safety_blocks": 0,
     "herb_flags_triggered": 0,
     "refusals": 0,
-    "grounded_answers": 0
+    "grounded_answers": 0,
 }
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
+
 
 @app.on_event("startup")
 def startup_event():
@@ -46,9 +51,12 @@ def startup_event():
     safety_router = SafetyRouter()
     bm25 = BM25Retriever()
     dense = DenseRetriever()
-    hybrid_retriever = HybridRetriever(bm25_retriever=bm25, dense_retriever=dense, tau=settings.grounding_tau)
+    hybrid_retriever = HybridRetriever(
+        bm25_retriever=bm25, dense_retriever=dense, tau=settings.grounding_tau
+    )
     llm_generator = LLMGenerator()
     print("[API] All engines initialized.")
+
 
 @app.get("/health", response_model=HealthResponse)
 def health():
@@ -58,18 +66,21 @@ def health():
         corpus_version=settings.corpus_version,
         model_version=settings.model_version,
         adapter_version=settings.adapter_version,
-        total_verses_indexed=total_verses
+        total_verses_indexed=total_verses,
     )
+
 
 @app.get("/metrics", response_model=MetricsResponse)
 def metrics():
     return MetricsResponse(**metrics_data)
+
 
 @app.get("/verse/{verse_id}")
 def get_verse(verse_id: str):
     if not hybrid_retriever or verse_id not in hybrid_retriever.verse_id_to_record:
         raise HTTPException(status_code=404, detail=f"Verse {verse_id} not found in corpus.")
     return hybrid_retriever.verse_id_to_record[verse_id]
+
 
 @app.post("/query", response_model=QueryResponse)
 def query_endpoint(req: QueryRequest):
@@ -97,7 +108,7 @@ def query_endpoint(req: QueryRequest):
             model_version=settings.model_version,
             adapter_version=settings.adapter_version,
             latency_ms=round(elapsed_ms, 2),
-            scrubbed_pii=had_pii
+            scrubbed_pii=had_pii,
         )
 
     warning_banner = safety_decision.warning_banner
@@ -126,7 +137,7 @@ def query_endpoint(req: QueryRequest):
             model_version=settings.model_version,
             adapter_version=settings.adapter_version,
             latency_ms=round(elapsed_ms, 2),
-            scrubbed_pii=had_pii
+            scrubbed_pii=had_pii,
         )
 
     # 4. Context Preparation & Generation
@@ -148,7 +159,7 @@ def query_endpoint(req: QueryRequest):
             verse=h.verse,
             chapter_title=h.chapter_title,
             english=h.english,
-            rrf_score=round(h.rrf_score, 4)
+            rrf_score=round(h.rrf_score, 4),
         )
         for h in retrieval_result.hits
     ]
@@ -167,11 +178,13 @@ def query_endpoint(req: QueryRequest):
         model_version=settings.model_version,
         adapter_version=settings.adapter_version,
         latency_ms=round(elapsed_ms, 2),
-        scrubbed_pii=had_pii
+        scrubbed_pii=had_pii,
     )
+
 
 # Mount static files and root UI
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
 
 @app.get("/")
 def serve_index():

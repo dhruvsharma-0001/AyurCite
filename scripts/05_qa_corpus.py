@@ -2,12 +2,14 @@ import json
 import random
 import sys
 from pathlib import Path
+
 import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 VERSES_PATH = DATA_DIR / "processed" / "verses.jsonl"
 LEDGER_PATH = DATA_DIR / "license_ledger.csv"
+
 
 def run_qa_gates():
     print("\n=======================================================")
@@ -24,7 +26,7 @@ def run_qa_gates():
 
     # 1. Load license ledger
     ledger_df = pd.read_csv(LEDGER_PATH)
-    valid_doc_ids = set(ledger_df[ledger_df["included_in_corpus"] == True]["doc_id"])
+    valid_doc_ids = set(ledger_df[ledger_df["included_in_corpus"]]["doc_id"])
     print(f"✅ Loaded {len(ledger_df)} ledger entries. Approved corpus doc_ids: {valid_doc_ids}")
 
     # 2. Read verses
@@ -51,7 +53,9 @@ def run_qa_gates():
         seen_ids.add(vid)
 
     if duplicates:
-        print(f"❌ FAIL: Gate 1 violated — Found {len(duplicates)} duplicate verse_ids: {duplicates[:10]}")
+        print(
+            f"❌ FAIL: Gate 1 violated — Found {len(duplicates)} duplicate verse_ids: {duplicates[:10]}"
+        )
         sys.exit(1)
     else:
         print(f"✅ Gate 1 PASSED: All {total_verses:,} verse_ids are strictly unique.")
@@ -78,7 +82,9 @@ def run_qa_gates():
         sys.exit(1)
 
     avg_words = sum(word_counts) / len(word_counts)
-    print(f"✅ Gate 2 PASSED: Length bounds respected (Min: {min(word_counts)}, Max: {max(word_counts)}, Mean: {avg_words:.1f} words).")
+    print(
+        f"✅ Gate 2 PASSED: Length bounds respected (Min: {min(word_counts)}, Max: {max(word_counts)}, Mean: {avg_words:.1f} words)."
+    )
 
     # Gate 3: Foreign Key integrity with license_ledger
     unauthorized_docs = []
@@ -91,7 +97,9 @@ def run_qa_gates():
         print(f"❌ FAIL: Gate 3 violated — Unauthorized doc_ids found: {unauthorized_docs[:5]}")
         sys.exit(1)
     else:
-        print("✅ Gate 3 PASSED: Every verse resolves to an approved public domain license_ledger row.")
+        print(
+            "✅ Gate 3 PASSED: Every verse resolves to an approved public domain license_ledger row."
+        )
 
     # Gate 4: Near-duplicate check on verse text
     text_hashes = set()
@@ -108,7 +116,9 @@ def run_qa_gates():
         print(f"❌ FAIL: Gate 4 violated — High text redundancy rate: {dup_rate:.2f}%")
         sys.exit(1)
     else:
-        print(f"✅ Gate 4 PASSED: Text redundancy within acceptable bounds ({dup_rate:.2f}% duplicates).")
+        print(
+            f"✅ Gate 4 PASSED: Text redundancy within acceptable bounds ({dup_rate:.2f}% duplicates)."
+        )
 
     # Gate 5: Random sample spot check
     print("\n--- Spot Check: 3 Random Sample Verses ---")
@@ -122,6 +132,7 @@ def run_qa_gates():
     print("\n=======================================================")
     print("      🎉 ALL QUALITY GATES PASSED SUCCESSFULLY!       ")
     print("=======================================================\n")
+
 
 if __name__ == "__main__":
     run_qa_gates()

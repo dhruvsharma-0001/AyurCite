@@ -1,10 +1,12 @@
 from pathlib import Path
+
 from pydantic import BaseModel
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 DOCS_DIR = PROJECT_ROOT / "docs"
 EVALS_DIR = PROJECT_ROOT / "evals"
+
 
 class Settings(BaseModel):
     # Model & Serving
@@ -26,5 +28,6 @@ class Settings(BaseModel):
     license_ledger_path: Path = DATA_DIR / "license_ledger.csv"
     gold_qa_path: Path = EVALS_DIR / "gold_qa.jsonl"
     adversarial_path: Path = EVALS_DIR / "adversarial.jsonl"
+
 
 settings = Settings()
