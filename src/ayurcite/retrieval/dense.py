@@ -35,11 +35,11 @@ class DenseRetriever:
         self.db = None
         if lancedb is not None:
             self.db = lancedb.connect(str(self.db_path))
-            tables = (
-                self.db.list_tables()
-                if hasattr(self.db, "list_tables")
-                else self.db.table_names()
-            )
+            try:
+                tables = self.db.table_names()
+            except Exception:
+                res = self.db.list_tables()
+                tables = getattr(res, "tables", list(res))
             if self.TABLE_NAME in tables:
                 self.table = self.db.open_table(self.TABLE_NAME)
 
